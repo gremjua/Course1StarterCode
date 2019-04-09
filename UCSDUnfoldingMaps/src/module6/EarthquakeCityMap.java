@@ -2,6 +2,7 @@ package module6;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import de.fhpotsdam.unfolding.UnfoldingMap;
@@ -116,7 +117,8 @@ public class EarthquakeCityMap extends PApplet {
 	    }
 
 	    // could be used for debugging
-	    printQuakes();
+		//sortAndPrint(20);
+	    //printQuakes();
 	 		
 	    // (3) Add markers to map
 	    //     NOTE: Country markers are not added to the map.  They are used
@@ -139,6 +141,15 @@ public class EarthquakeCityMap extends PApplet {
 	// TODO: Add the method:
 	//   private void sortAndPrint(int numToPrint)
 	// and then call that method from setUp
+	private void sortAndPrint(int numToPrint) {
+		EarthquakeMarker[] earthquakes = quakeMarkers.toArray(new EarthquakeMarker[0]);
+		//Collections.sort(new ArrayList<EarthquakeMarker>(quakeMarkers));
+		Arrays.sort(earthquakes);
+		int toPrint = numToPrint < earthquakes.length ? numToPrint : earthquakes.length;
+		for (int i=0; i<toPrint ; i++) {
+			System.out.println(earthquakes[i]);
+		}
+	}
 	
 	/** Event handler that gets called automatically when the 
 	 * mouse moves.
