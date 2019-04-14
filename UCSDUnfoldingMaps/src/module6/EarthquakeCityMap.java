@@ -1,9 +1,7 @@
 package module6;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import de.fhpotsdam.unfolding.UnfoldingMap;
 import de.fhpotsdam.unfolding.data.Feature;
@@ -15,9 +13,12 @@ import de.fhpotsdam.unfolding.marker.Marker;
 import de.fhpotsdam.unfolding.marker.MultiMarker;
 import de.fhpotsdam.unfolding.providers.Google;
 import de.fhpotsdam.unfolding.providers.MBTilesMapProvider;
+import de.fhpotsdam.unfolding.providers.Microsoft;
 import de.fhpotsdam.unfolding.utils.MapUtils;
 import parsing.ParseFeed;
 import processing.core.PApplet;
+import processing.core.PConstants;
+import processing.core.PGraphics;
 
 /** EarthquakeCityMap
  * An application with an interactive map displaying earthquake data.
@@ -65,6 +66,9 @@ public class EarthquakeCityMap extends PApplet {
 	// NEW IN MODULE 5
 	private CommonMarker lastSelected;
 	private CommonMarker lastClicked;
+
+	// NEW IN MODULE 6 FINAL
+	private NearbyEarthquakesPopup nearbyEarthquakesPopup;
 	
 	public void setup() {		
 		// (1) Initializing canvas and map tiles
@@ -74,7 +78,7 @@ public class EarthquakeCityMap extends PApplet {
 		    earthquakesURL = "2.5_week.atom";  // The same feed, but saved August 7, 2015
 		}
 		else {
-			map = new UnfoldingMap(this, 200, 50, 650, 600, new Google.GoogleMapProvider());
+			map = new UnfoldingMap(this, 200, 50, 650, 600, new Microsoft.AerialProvider());
 			// IF YOU WANT TO TEST WITH A LOCAL FILE, uncomment the next line
 		    //earthquakesURL = "2.5_week.atom";
 		}
@@ -125,8 +129,10 @@ public class EarthquakeCityMap extends PApplet {
 	    //           for their geometric properties
 	    map.addMarkers(quakeMarkers);
 	    map.addMarkers(cityMarkers);
-	    
-	    
+
+	    // NEW FROM MODULE 6 FINAL
+	    nearbyEarthquakesPopup = new NearbyEarthquakesPopup("Nearby Earthquakes", color(255,255,255),color(0,0,0),11,10);
+
 	}  // End setup
 	
 	
@@ -134,6 +140,7 @@ public class EarthquakeCityMap extends PApplet {
 		background(0);
 		map.draw();
 		addKey();
+		drawPopUp();
 		
 	}
 	
@@ -198,6 +205,8 @@ public class EarthquakeCityMap extends PApplet {
 		if (lastClicked != null) {
 			unhideMarkers();
 			lastClicked = null;
+			// Added for final exercise
+			nearbyEarthquakesPopup.setHidden(true);
 		}
 		else if (lastClicked == null) 
 		{
@@ -230,9 +239,64 @@ public class EarthquakeCityMap extends PApplet {
 						quakeMarker.setHidden(true);
 					}
 				}
+				// NEW FROM MODULE 6 FINAL
+				//lastClicked is the clicked city marker
+				//show pop-up for this city
+				createPopUp();
 				return;
 			}
 		}		
+	}
+
+	// NEW FROM MODULE 6 FINAL
+	private void createPopUp() {
+
+		nearbyEarthquakesPopup.setHidden(false);
+		List<Marker> notHidden = quakeMarkers.stream().filter(quake -> !quake.isHidden()).collect(Collectors.toList());
+
+		int numQuakes = notHidden.size();
+		double averageMagnitude = notHidden.stream()
+				.mapToDouble(quake ->  ((EarthquakeMarker)quake).getMagnitude())
+				.average()
+				.orElse(0);
+
+		String mostRecent = notHidden.stream()
+				.sorted(( e1,  e2)->((EarthquakeMarker)e1).getDateEpoch().compareTo(((EarthquakeMarker)e1).getDateEpoch()))
+				.map(quake ->  ((EarthquakeMarker)quake).getTitle())
+				.findFirst()
+				.orElse("");
+
+		nearbyEarthquakesPopup.setTitle(((CityMarker)lastClicked).getName());
+		nearbyEarthquakesPopup.setAvgMagnitude(new Float(averageMagnitude));
+		nearbyEarthquakesPopup.setCountNearbyEarthquakes(numQuakes);
+		nearbyEarthquakesPopup.setMostRecentEarthquake(mostRecent);
+		nearbyEarthquakesPopup.setxInit(mouseX);
+		nearbyEarthquakesPopup.setyInit(mouseY);
+		float width = Math.max(textWidth("Most Recent: " + nearbyEarthquakesPopup.getMostRecentEarthquake()),
+				140);
+		nearbyEarthquakesPopup.setWidth(width);
+		nearbyEarthquakesPopup.setHeight(80);
+
+	}
+
+	// NEW FROM MODULE 6 FINAL
+	void drawPopUp(){
+		if(!nearbyEarthquakesPopup.isHidden()) {
+			pushStyle();
+
+			fill(nearbyEarthquakesPopup.getBgColor());
+			textSize(nearbyEarthquakesPopup.getTitleSize());
+			rectMode(PConstants.CORNER);
+			rect(nearbyEarthquakesPopup.getxInit(), nearbyEarthquakesPopup.getyInit(), nearbyEarthquakesPopup.getWidth(), nearbyEarthquakesPopup.getHeight());
+			fill(nearbyEarthquakesPopup.getTextColor());
+			textAlign(PConstants.LEFT, PConstants.TOP);
+			text(nearbyEarthquakesPopup.getTitle(), nearbyEarthquakesPopup.getxInit()+5, nearbyEarthquakesPopup.getyInit()+3);
+			text("Nearby Earthquakes: " + nearbyEarthquakesPopup.getCountNearbyEarthquakes(), nearbyEarthquakesPopup.getxInit()+3, nearbyEarthquakesPopup.getyInit()+20);
+			text("Average Magnitude: " + nearbyEarthquakesPopup.getAvgMagnitude(), nearbyEarthquakesPopup.getxInit()+3, nearbyEarthquakesPopup.getyInit()+35);
+			text("Most Recent: " + nearbyEarthquakesPopup.getMostRecentEarthquake(), nearbyEarthquakesPopup.getxInit()+3, nearbyEarthquakesPopup.getyInit()+50);
+
+			popStyle();
+		}
 	}
 	
 	// Helper method that will check if an earthquake marker was clicked on
