@@ -4,6 +4,8 @@ package parsing;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import de.fhpotsdam.unfolding.data.Feature;
 import de.fhpotsdam.unfolding.data.PointFeature;
@@ -71,8 +73,14 @@ public class ParseFeed {
 						point.putProperty("age", ageStr);
 					}
 				}
-		
 
+				// NEW FROM MODULE 6 FINAL
+				XML summary = itemXML[i].getChild("summary");
+				String stringSummary = summary.getChild(0).getContent();
+				final Pattern pattern = Pattern.compile("<dd>(.+?)</dd>", Pattern.DOTALL);
+				final Matcher matcher = pattern.matcher(stringSummary);
+				matcher.find();
+				point.putProperty("date", matcher.group(1).replace(" UTC", ""));
 			}
 		
 			return features;
