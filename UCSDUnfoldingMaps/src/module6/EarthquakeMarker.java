@@ -4,6 +4,9 @@ import de.fhpotsdam.unfolding.data.PointFeature;
 import processing.core.PConstants;
 import processing.core.PGraphics;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
 /** Implements a visual marker for earthquakes on an earthquake map
  * 
  * @author UC San Diego Intermediate Software Development MOOC team
@@ -188,6 +191,21 @@ public abstract class EarthquakeMarker extends CommonMarker implements Comparabl
 	public boolean isOnLand()
 	{
 		return isOnLand;
+	}
+
+	public String getDate() {
+		return getProperty("date").toString();
+	}
+
+	public Long getDateEpoch() {
+		try {
+			Long epoch = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(getProperty("date").toString()).getTime();
+			return epoch;
+
+		} catch (ParseException e) {
+			e.printStackTrace();
+			return 0L;
+		}
 	}
 	
 
